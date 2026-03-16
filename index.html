@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
+    <title>Студенческий опросник</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app">
+        <header class="header">
+            <h1>📊 Студенческий опросник</h1>
+            <p class="subtitle">Создай опрос за минуту</p>
+        </header>
+
+        <main>
+            <!-- Кнопка создания нового опроса (всегда видна) -->
+            <button class="btn btn-primary" id="newPollBtn">➕ Создать новый опрос</button>
+
+            <!-- Конструктор опроса (изначально скрыт) -->
+            <div class="constructor" id="constructor" style="display: none;">
+                <h2>Создание опроса</h2>
+                
+                <div class="form-group">
+                    <label for="pollTitle">Название опроса</label>
+                    <input type="text" id="pollTitle" class="big-input" placeholder="Например: Куда пойдем в воскресенье?" value="Опрос группы">
+                </div>
+
+                <div class="form-group">
+                    <label for="questionText">Вопрос</label>
+                    <input type="text" id="questionText" class="big-input" placeholder="Текст вопроса" value="Куда идем?">
+                </div>
+
+                <div class="options-container" id="optionsContainer">
+                    <label>Варианты ответа</label>
+                    <div class="option-item">
+                        <input type="text" class="big-input option-input" placeholder="Вариант 1" value="Кино">
+                    </div>
+                    <div class="option-item">
+                        <input type="text" class="big-input option-input" placeholder="Вариант 2" value="Парк">
+                    </div>
+                </div>
+
+                <div class="buttons-row">
+                    <button class="btn btn-secondary" id="addOptionBtn">➕ Добавить вариант</button>
+                    <button class="btn btn-success" id="createPollBtn">✅ Создать опрос</button>
+                </div>
+            </div>
+
+            <!-- Результат: ссылки на опрос -->
+            <div class="result" id="result" style="display: none;">
+                <h2>🎉 Опрос готов!</h2>
+                
+                <div class="link-block">
+                    <p class="link-label">🔗 Ссылка для голосования:</p>
+                    <div class="link-copy" id="voteLinkContainer">
+                        <span class="link-url" id="voteLink">https://studentpoll.ru/vote/123</span>
+                        <button class="btn btn-small copy-btn" data-copy="voteLink">📋 Копировать</button>
+                    </div>
+                </div>
+
+                <div class="link-block">
+                    <p class="link-label">🔒 Ссылка для результатов (только для вас):</p>
+                    <div class="link-copy" id="resultLinkContainer">
+                        <span class="link-url" id="resultLink">https://studentpoll.ru/results/123</span>
+                        <button class="btn btn-small copy-btn" data-copy="resultLink">📋 Копировать</button>
+                    </div>
+                </div>
+
+                <div class="buttons-row">
+                    <button class="btn btn-primary" id="createAnotherBtn">🔄 Создать новый</button>
+                </div>
+            </div>
+
+            <!-- Демо-опрос (для голосования) -->
+            <div class="poll-view" id="pollView" style="display: none;">
+                <h2 id="viewPollTitle">Опрос группы</h2>
+                <p class="poll-question" id="viewPollQuestion">Куда идем?</p>
+                
+                <div class="options-list" id="optionsList"></div>
+
+                <div class="buttons-row">
+                    <button class="btn btn-primary btn-large" id="voteBtn">🗳️ Проголосовать</button>
+                    <button class="btn btn-secondary btn-small" id="backToConstructorBtn">← Назад</button>
+                </div>
+            </div>
+
+            <!-- Страница результатов -->
+            <div class="results-view" id="resultsView" style="display: none;">
+                <h2 id="resultsTitle">Результаты опроса</h2>
+                
+                <div class="stats-container" id="statsContainer">
+                    <div class="stat-item">Кино: <span class="stat-count">0</span> голосов (0%)</div>
+                    <div class="stat-item">Парк: <span class="stat-count">0</span> голосов (0%)</div>
+                </div>
+
+                <div class="progress-container" id="progressContainer"></div>
+
+                <div class="buttons-row">
+                    <button class="btn btn-secondary" id="backToConstructorFromResultsBtn">← К опросам</button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
