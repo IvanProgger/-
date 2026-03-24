@@ -5,7 +5,7 @@
 
 // 👇 ТВОЯ ССЫЛКА НА ТАБЛИЦУ (уже вставлена!)
 
-const GOOGLE_SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vR0dNK3abgB1r1WYc_G7EfBqfjWVpJZtO3yQS8gh1tYW4GnRsKn-7s0fQzz-sW611aBHii-KB7G9AU4/pub?gid=0&single=true&output=csv';
+const GOOGLE_SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vR0dNK3abgB1r1WYc_G7EfBqfjWVpJZtO3yQS8gh1tYW4GnRsKn-7s0fQzz-sW611aBHii-KB7G9AU4/pub?output=csv';
 // DOM элементы
 const constructor = document.getElementById('constructor');
 const result = document.getElementById('result');
