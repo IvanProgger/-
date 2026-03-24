@@ -1,7 +1,10 @@
 // ============================================
-// ВЕСЬ ОПРОС ХРАНИТСЯ В ССЫЛКЕ!
-// Друг откроет — сразу увидит вопросы
+// ПРОСТАЯ ВЕРСИЯ С GOOGLE ТАБЛИЦЕЙ
+// Все голоса сохраняются в Google Таблицу
 // ============================================
+
+// 👇 ТВОЯ ССЫЛКА НА ТАБЛИЦУ (уже вставлена!)
+const GOOGLE_SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vR0dNK3abgB1r1WYc_G7EfBqfjWVpJZtO3yQS8gh1tYW4GnRsKn-7s0fQzz-sW611aBHii-KB7G9AU4/export?format=csv';
 
 // DOM элементы
 const constructor = document.getElementById('constructor');
@@ -38,32 +41,25 @@ const statsContainer = document.getElementById('statsContainer');
 const progressContainer = document.getElementById('progressContainer');
 const backFromResultsBtn = document.getElementById('backFromResultsBtn');
 
-// Текущий опрос (для голосования/результатов)
 let currentPoll = null;
-let currentMode = 'constructor';
 let currentPollId = null;
-
-// Хранилище голосов (только на этом устройстве)
-let votesStorage = {};
 
 // ============================================
 // ЗАПУСК
 // ============================================
 function init() {
-    loadVotesFromStorage();
     handleRoute();
     addEventListeners();
-    renderConstructorOptions(); // начальные варианты
+    renderConstructorOptions();
 }
 
 // ============================================
-// МАРШРУТИЗАЦИЯ ПО ХЭШУ
+// МАРШРУТИЗАЦИЯ
 // ============================================
 function handleRoute() {
     const hash = window.location.hash;
     
     if (hash.startsWith('#vote/')) {
-        // Ссылка для голосования
         const encodedData = hash.replace('#vote/', '');
         try {
             const decoded = decodeURIComponent(encodedData);
@@ -72,12 +68,11 @@ function handleRoute() {
             currentPollId = pollData.id;
             showPollPage();
         } catch(e) {
-            alert('Ошибка: неправильная ссылка на опрос');
+            alert('Ошибка: неправильная ссылка');
             showConstructorPage();
         }
     }
     else if (hash.startsWith('#results/')) {
-        // Ссылка для результатов
         const encodedData = hash.replace('#results/', '');
         try {
             const decoded = decodeURIComponent(encodedData);
@@ -86,7 +81,7 @@ function handleRoute() {
             currentPollId = pollData.id;
             showResultsPage();
         } catch(e) {
-            alert('Ошибка: неправильная ссылка на результаты');
+            alert('Ошибка: неправильная ссылка');
             showConstructorPage();
         }
     }
@@ -95,11 +90,7 @@ function handleRoute() {
     }
 }
 
-// ============================================
-// ПОКАЗ СТРАНИЦ
-// ============================================
 function showConstructorPage() {
-    currentMode = 'constructor';
     constructor.style.display = 'block';
     result.style.display = 'none';
     pollView.style.display = 'none';
@@ -108,7 +99,6 @@ function showConstructorPage() {
 }
 
 function showResultPage() {
-    currentMode = 'result';
     constructor.style.display = 'none';
     result.style.display = 'block';
     pollView.style.display = 'none';
@@ -118,7 +108,6 @@ function showResultPage() {
 
 function showPollPage() {
     if (!currentPoll) return;
-    currentMode = 'poll';
     constructor.style.display = 'none';
     result.style.display = 'none';
     pollView.style.display = 'block';
@@ -132,7 +121,6 @@ function showPollPage() {
 
 function showResultsPage() {
     if (!currentPoll) return;
-    currentMode = 'results';
     constructor.style.display = 'none';
     result.style.display = 'none';
     pollView.style.display = 'none';
@@ -140,24 +128,19 @@ function showResultsPage() {
     headerSubtitle.textContent = 'Результаты';
     
     resultsTitle.textContent = `Результаты: ${currentPoll.title}`;
-    renderStats();
+    loadResultsFromSheet();
 }
 
 // ============================================
 // КОНСТРУКТОР
 // ============================================
 function renderConstructorOptions() {
-    const defaultOptions = ['Кино', 'Парк'];
     optionsContainer.innerHTML = '<label>Варианты ответа</label>';
     
-    defaultOptions.forEach((opt, index) => {
+    ['Кино', 'Парк'].forEach((opt, i) => {
         const div = document.createElement('div');
         div.className = 'option-item';
-        div.innerHTML = `
-            <input type="text" class="big-input option-input" 
-                   value="${opt}" 
-                   placeholder="Вариант ${index + 1}">
-        `;
+        div.innerHTML = `<input type="text" class="big-input option-input" value="${opt}" placeholder="Вариант ${i+1}">`;
         optionsContainer.appendChild(div);
     });
 }
@@ -165,15 +148,11 @@ function renderConstructorOptions() {
 function addOption() {
     const div = document.createElement('div');
     div.className = 'option-item';
-    div.innerHTML = `
-        <input type="text" class="big-input option-input" 
-               value="Новый вариант" 
-               placeholder="Новый вариант">
-    `;
+    div.innerHTML = `<input type="text" class="big-input option-input" value="Новый вариант" placeholder="Новый вариант">`;
     optionsContainer.appendChild(div);
 }
 
-function getOptionsFromConstructor() {
+function getOptions() {
     const inputs = document.querySelectorAll('.option-input');
     const options = [];
     inputs.forEach(input => {
@@ -185,32 +164,88 @@ function getOptionsFromConstructor() {
 function createPoll() {
     const title = pollTitle.value || 'Опрос группы';
     const question = questionText.value || 'Куда идем?';
-    const options = getOptionsFromConstructor();
+    const options = getOptions();
     
     if (options.length < 2) {
-        alert('Добавь хотя бы 2 варианта ответа!');
+        alert('Добавь хотя бы 2 варианта!');
         return;
     }
     
     const pollId = Date.now() + '_' + Math.random().toString(36).substr(2, 6);
-    const pollData = {
-        id: pollId,
-        title: title,
-        question: question,
-        options: options
-    };
+    const pollData = { id: pollId, title, question, options };
     
     currentPoll = pollData;
     currentPollId = pollId;
     
-    // Кодируем опрос в строку для ссылки
     const encoded = encodeURIComponent(JSON.stringify(pollData));
     const baseUrl = window.location.origin + window.location.pathname;
     
-    voteLink.textContent = baseUrl + '#vote/' + encoded;
-    resultLink.textContent = baseUrl + '#results/' + encoded;
+    const fullVoteLink = baseUrl + '#vote/' + encoded;
+    const fullResultLink = baseUrl + '#results/' + encoded;
+    
+    voteLink.textContent = fullVoteLink;
+    resultLink.textContent = fullResultLink;
     
     showResultPage();
+}
+
+// ============================================
+// ЗАГРУЗКА ИЗ GOOGLE ТАБЛИЦЫ
+// ============================================
+async function loadResultsFromSheet() {
+    if (!currentPoll) return;
+    
+    statsContainer.innerHTML = '<div class="stat-item">📡 Загрузка результатов...</div>';
+    
+    try {
+        const response = await fetch(GOOGLE_SHEET_URL);
+        const csvText = await response.text();
+        
+        // Парсим CSV
+        const rows = csvText.split('\n').slice(1);
+        const votes = new Array(currentPoll.options.length).fill(0);
+        
+        rows.forEach(row => {
+            const cols = row.split(',');
+            if (cols.length >= 2 && cols[0] === currentPollId) {
+                const idx = parseInt(cols[1]);
+                if (idx >= 0 && idx < votes.length) {
+                    votes[idx]++;
+                }
+            }
+        });
+        
+        renderStats(votes);
+    } catch(e) {
+        console.error('Ошибка загрузки:', e);
+        statsContainer.innerHTML = '<div class="stat-item">⚠️ Ошибка загрузки. Попробуй позже.</div>';
+        renderStats(new Array(currentPoll.options.length).fill(0));
+    }
+}
+
+// ============================================
+// СОХРАНЕНИЕ В GOOGLE ТАБЛИЦУ (через Apps Script)
+// ============================================
+async function saveVoteToSheet(pollId, optionIndex, optionText) {
+    // ВАЖНО: замени URL на свой из Apps Script
+    const scriptURL = 'https://script.google.com/macros/s/https://script.google.com/macros/s/AKfycbwhX3MnwwKTaqOqB-YhP5ORr8kHfXGClushS4IIkdc5bFka0QvlbTYFVZ7ONWwys3V0/exec/exec';
+    
+    try {
+        await fetch(scriptURL, {
+            method: 'POST',
+            mode: 'no-cors',
+            body: JSON.stringify({
+                pollId: pollId,
+                optionIndex: optionIndex,
+                optionText: optionText,
+                date: new Date().toISOString()
+            })
+        });
+        return true;
+    } catch(e) {
+        console.error('Ошибка сохранения:', e);
+        return false;
+    }
 }
 
 // ============================================
@@ -241,7 +276,7 @@ function renderPollOptions() {
     });
 }
 
-function submitVote() {
+async function submitVote() {
     const selected = document.querySelector('input[name="vote"]:checked');
     if (!selected) {
         alert('Выбери вариант!');
@@ -249,23 +284,24 @@ function submitVote() {
     }
     
     const index = parseInt(selected.value);
+    const optionText = currentPoll.options[index];
     
-    // Сохраняем голос в localStorage этого устройства
-    if (!votesStorage[currentPollId]) {
-        votesStorage[currentPollId] = new Array(currentPoll.options.length).fill(0);
-    }
-    votesStorage[currentPollId][index]++;
-    saveVotesToStorage();
+    voteBtn.textContent = '⏳ Отправка...';
+    voteBtn.disabled = true;
     
-    alert('Голос учтён!');
+    await saveVoteToSheet(currentPollId, index, optionText);
+    
+    voteBtn.textContent = '🗳️ Проголосовать';
+    voteBtn.disabled = false;
+    
+    alert('✅ Голос учтён!');
     showResultsPage();
 }
 
 // ============================================
 // СТАТИСТИКА
 // ============================================
-function renderStats() {
-    const votes = votesStorage[currentPollId] || new Array(currentPoll.options.length).fill(0);
+function renderStats(votes) {
     const totalVotes = votes.reduce((a, b) => a + b, 0);
     
     statsContainer.innerHTML = '';
@@ -292,27 +328,9 @@ function renderStats() {
     if (totalVotes === 0) {
         const emptyDiv = document.createElement('div');
         emptyDiv.className = 'stat-item';
-        emptyDiv.textContent = 'Пока никто не голосовал';
+        emptyDiv.textContent = 'Пока никто не голосовал. Будь первым! 🎉';
         statsContainer.appendChild(emptyDiv);
     }
-}
-
-// ============================================
-// ХРАНЕНИЕ ГОЛОСОВ
-// ============================================
-function loadVotesFromStorage() {
-    const saved = localStorage.getItem('poll_votes');
-    if (saved) {
-        try {
-            votesStorage = JSON.parse(saved);
-        } catch(e) {
-            votesStorage = {};
-        }
-    }
-}
-
-function saveVotesToStorage() {
-    localStorage.setItem('poll_votes', JSON.stringify(votesStorage));
 }
 
 // ============================================
@@ -335,29 +353,20 @@ function addEventListeners() {
     addOptionBtn.addEventListener('click', addOption);
     createPollBtn.addEventListener('click', createPoll);
     
-    copyVoteBtn.addEventListener('click', () => {
-        copyToClipboard(voteLink.textContent, copyVoteBtn);
-    });
-    copyResultBtn.addEventListener('click', () => {
-        copyToClipboard(resultLink.textContent, copyResultBtn);
-    });
+    copyVoteBtn.addEventListener('click', () => copyToClipboard(voteLink.textContent, copyVoteBtn));
+    copyResultBtn.addEventListener('click', () => copyToClipboard(resultLink.textContent, copyResultBtn));
     
-    viewPollBtn.addEventListener('click', () => {
-        window.location.href = voteLink.textContent;
-    });
-    
+    viewPollBtn.addEventListener('click', () => window.location.href = voteLink.textContent);
     createAnotherBtn.addEventListener('click', () => {
         window.location.hash = '';
         showConstructorPage();
     });
     
     voteBtn.addEventListener('click', submitVote);
-    
     backFromPollBtn.addEventListener('click', () => {
         window.location.hash = '';
         showConstructorPage();
     });
-    
     backFromResultsBtn.addEventListener('click', () => {
         window.location.hash = '';
         showConstructorPage();
@@ -366,7 +375,4 @@ function addEventListeners() {
     window.addEventListener('hashchange', handleRoute);
 }
 
-// ============================================
-// ЗАПУСК
-// ============================================
 document.addEventListener('DOMContentLoaded', init);
