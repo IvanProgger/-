@@ -1,12 +1,11 @@
 // ============================================
-// ФИНАЛЬНАЯ ВЕРСИЯ — РАБОТАЕТ 100%
+// GOOGLE TABLES — ФИНАЛЬНАЯ ВЕРСИЯ
 // ============================================
 
-// 👇 ТВОИ ССЫЛКИ (проверь, что они правильные)
-const GOOGLE_SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vR0dNK3abgB1r1WYc_G7EfBqfjWVpJZtO3yQS8gh1tYW4GnRsKn-7s0fQzz-sW611aBHii-KB7G9AU4/pub?output=csv';
-const scriptURL = 'https://script.google.com/macros/s/AKfycbynYGM7H8Jb8nqYmfJG4xwbiVAfdXV7SFTAJSGgHLEtQV3cc3m8R_oWqdRIQRKXzacE/exec';
+// 👇 ВСТАВЬ СВОИ ССЫЛКИ
+const GOOGLE_SHEET_CSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vR0dNK3abgB1r1WYc_G7EfBqfjWVpJZtO3yQS8gh1tYW4GnRsKn-7s0fQzz-sW611aBHii-KB7G9AU4/pub?output=csv';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwb1VO0H-ws1EJU75qcBMX27zkvm1z1ay-tcO_b0fBmq19AjiQxqkvCG41GaHFIRS-x/exec';
 
-// DOM элементы
 const constructor = document.getElementById('constructor');
 const result = document.getElementById('result');
 const pollView = document.getElementById('pollView');
@@ -114,7 +113,7 @@ function showResultsPage() {
     resultsView.style.display = 'block';
     headerSubtitle.textContent = 'Результаты';
     resultsTitle.textContent = `Результаты: ${currentPoll.title}`;
-    loadResultsFromSheet();
+    loadResults();
 }
 
 function renderConstructorOptions() {
@@ -168,14 +167,14 @@ function createPoll() {
     showResultPage();
 }
 
-// ========== ГЛАВНОЕ: ЗАГРУЗКА РЕЗУЛЬТАТОВ ==========
-async function loadResultsFromSheet() {
+// ========== ЧТЕНИЕ ИЗ ТАБЛИЦЫ ==========
+async function loadResults() {
     if (!currentPoll) return;
     
     statsContainer.innerHTML = '<div class="stat-item">📡 Загрузка...</div>';
     
     try {
-        const response = await fetch(GOOGLE_SHEET_URL);
+        const response = await fetch(GOOGLE_SHEET_CSV);
         const text = await response.text();
         
         const lines = text.split('\n');
@@ -185,7 +184,6 @@ async function loadResultsFromSheet() {
             const line = lines[i].trim();
             if (line === '') continue;
             
-            // Ищем строки с нашим pollId
             if (line.includes(currentPollId)) {
                 const parts = line.split(',');
                 if (parts.length >= 2) {
@@ -205,9 +203,10 @@ async function loadResultsFromSheet() {
     }
 }
 
-async function saveVoteToSheet(pollId, optionIndex, optionText) {
+// ========== СОХРАНЕНИЕ В ТАБЛИЦУ ==========
+async function saveVote(pollId, optionIndex, optionText) {
     try {
-        await fetch(SCRIPT_URL, {
+        await fetch(APPS_SCRIPT_URL, {
             method: 'POST',
             mode: 'no-cors',
             body: JSON.stringify({
@@ -219,7 +218,7 @@ async function saveVoteToSheet(pollId, optionIndex, optionText) {
         });
         return true;
     } catch(e) {
-        console.error('Ошибка сохранения:', e);
+        console.error('Ошибка:', e);
         return false;
     }
 }
@@ -259,7 +258,7 @@ async function submitVote() {
     voteBtn.textContent = '⏳ Отправка...';
     voteBtn.disabled = true;
     
-    await saveVoteToSheet(currentPollId, index, optionText);
+    await saveVote(currentPollId, index, optionText);
     
     voteBtn.textContent = '🗳️ Проголосовать';
     voteBtn.disabled = false;
@@ -268,13 +267,13 @@ async function submitVote() {
     showResultsPage();
 }
 
-function renderStats(votes) {
-    const totalVotes = votes.reduce((a, b) => a + b, 0);
+function renderStats(votesArray) {
+    const totalVotes = votesArray.reduce((a, b) => a + b, 0);
     statsContainer.innerHTML = '';
     progressContainer.innerHTML = '';
     
     currentPoll.options.forEach((opt, idx) => {
-        const count = votes[idx];
+        const count = votesArray[idx];
         const percent = totalVotes > 0 ? Math.round((count / totalVotes) * 100) : 0;
         
         const statDiv = document.createElement('div');
@@ -292,7 +291,10 @@ function renderStats(votes) {
     });
     
     if (totalVotes === 0) {
-        statsContainer.innerHTML += '<div class="stat-item">😊 Пока никто не голосовал. Будь первым!</div>';
+        const emptyDiv = document.createElement('div');
+        emptyDiv.className = 'stat-item';
+        emptyDiv.textContent = 'Пока никто не голосовал. Будь первым! 🎉';
+        statsContainer.appendChild(emptyDiv);
     }
 }
 
