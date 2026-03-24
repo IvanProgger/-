@@ -10,14 +10,11 @@
     <div class="app">
         <header class="header">
             <h1>📊 Студенческий опросник</h1>
-            <p class="subtitle">Создай опрос за минуту</p>
+            <p class="subtitle" id="headerSubtitle">Создай опрос за минуту</p>
         </header>
 
         <main>
-            <!-- Кнопка создания нового опроса (всегда видна) -->
-            <button class="btn btn-primary" id="newPollBtn">➕ Создать новый опрос</button>
-
-            <!-- Конструктор опроса (изначально скрыт) -->
+            <!-- КОНСТРУКТОР (по умолчанию скрыт) -->
             <div class="constructor" id="constructor" style="display: none;">
                 <h2>Создание опроса</h2>
                 
@@ -47,32 +44,33 @@
                 </div>
             </div>
 
-            <!-- Результат: ссылки на опрос -->
+            <!-- РЕЗУЛЬТАТ (ссылки на опрос) -->
             <div class="result" id="result" style="display: none;">
                 <h2>🎉 Опрос готов!</h2>
                 
                 <div class="link-block">
-                    <p class="link-label">🔗 Ссылка для голосования:</p>
-                    <div class="link-copy" id="voteLinkContainer">
+                    <p class="link-label">🔗 Ссылка для голосования (кинь друзьям):</p>
+                    <div class="link-copy">
                         <span class="link-url" id="voteLink">https://studentpoll.ru/vote/123</span>
-                        <button class="btn btn-small copy-btn" data-copy="voteLink">📋 Копировать</button>
+                        <button class="btn btn-small copy-btn" id="copyVoteBtn">📋 Копировать</button>
                     </div>
                 </div>
 
                 <div class="link-block">
-                    <p class="link-label">🔒 Ссылка для результатов (только для вас):</p>
-                    <div class="link-copy" id="resultLinkContainer">
+                    <p class="link-label">🔒 Ссылка для результатов (только для тебя):</p>
+                    <div class="link-copy">
                         <span class="link-url" id="resultLink">https://studentpoll.ru/results/123</span>
-                        <button class="btn btn-small copy-btn" data-copy="resultLink">📋 Копировать</button>
+                        <button class="btn btn-small copy-btn" id="copyResultBtn">📋 Копировать</button>
                     </div>
                 </div>
 
                 <div class="buttons-row">
-                    <button class="btn btn-primary" id="createAnotherBtn">🔄 Создать новый</button>
+                    <button class="btn btn-primary" id="viewPollBtn">👀 Посмотреть опрос</button>
+                    <button class="btn btn-secondary" id="createAnotherBtn">🔄 Создать новый</button>
                 </div>
             </div>
 
-            <!-- Демо-опрос (для голосования) -->
+            <!-- ГОЛОСОВАНИЕ (то, что нужно другу) -->
             <div class="poll-view" id="pollView" style="display: none;">
                 <h2 id="viewPollTitle">Опрос группы</h2>
                 <p class="poll-question" id="viewPollQuestion">Куда идем?</p>
@@ -81,23 +79,19 @@
 
                 <div class="buttons-row">
                     <button class="btn btn-primary btn-large" id="voteBtn">🗳️ Проголосовать</button>
-                    <button class="btn btn-secondary btn-small" id="backToConstructorBtn">← Назад</button>
+                    <button class="btn btn-secondary" id="backFromPollBtn">← Назад</button>
                 </div>
             </div>
 
-            <!-- Страница результатов -->
+            <!-- РЕЗУЛЬТАТЫ (для того, кто создал) -->
             <div class="results-view" id="resultsView" style="display: none;">
                 <h2 id="resultsTitle">Результаты опроса</h2>
                 
-                <div class="stats-container" id="statsContainer">
-                    <div class="stat-item">Кино: <span class="stat-count">0</span> голосов (0%)</div>
-                    <div class="stat-item">Парк: <span class="stat-count">0</span> голосов (0%)</div>
-                </div>
-
+                <div class="stats-container" id="statsContainer"></div>
                 <div class="progress-container" id="progressContainer"></div>
 
                 <div class="buttons-row">
-                    <button class="btn btn-secondary" id="backToConstructorFromResultsBtn">← К опросам</button>
+                    <button class="btn btn-secondary" id="backFromResultsBtn">← К опросам</button>
                 </div>
             </div>
         </main>
