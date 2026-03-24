@@ -192,33 +192,41 @@ function createPoll() {
 // ============================================
 // ЗАГРУЗКА ИЗ GOOGLE ТАБЛИЦЫ
 // ============================================
+
 async function loadResultsFromSheet() {
     if (!currentPoll) return;
     
     statsContainer.innerHTML = '<div class="stat-item">📡 Загрузка результатов...</div>';
     
     try {
+        // Пробуем загрузить CSV
         const response = await fetch(GOOGLE_SHEET_URL);
-        const csvText = await response.text();
+        const text = await response.text();
         
-        // Парсим CSV
-        const rows = csvText.split('\n').slice(1);
+        // Разбираем CSV вручную
+        const lines = text.split('\n');
         const votes = new Array(currentPoll.options.length).fill(0);
         
-        rows.forEach(row => {
-            const cols = row.split(',');
-            if (cols.length >= 2 && cols[0] === currentPollId) {
-                const idx = parseInt(cols[1]);
-                if (idx >= 0 && idx < votes.length) {
-                    votes[idx]++;
+        for (let i = 1; i < lines.length; i++) {
+            const line = lines[i].trim();
+            if (line === '') continue;
+            
+            // Ищем ID опроса в строке
+            if (line.includes(currentPollId)) {
+                const parts = line.split(',');
+                if (parts.length >= 2) {
+                    const optionIndex = parseInt(parts[1]);
+                    if (!isNaN(optionIndex) && optionIndex >= 0 && optionIndex < votes.length) {
+                        votes[optionIndex]++;
+                    }
                 }
             }
-        });
+        }
         
         renderStats(votes);
     } catch(e) {
         console.error('Ошибка загрузки:', e);
-        statsContainer.innerHTML = '<div class="stat-item">⚠️ Ошибка загрузки. Попробуй позже.</div>';
+        statsContainer.innerHTML = '<div class="stat-item">⚠️ Ошибка загрузки</div>';
         renderStats(new Array(currentPoll.options.length).fill(0));
     }
 }
