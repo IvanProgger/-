@@ -1,10 +1,6 @@
 // ============================================
-// GOOGLE TABLES — ФИНАЛЬНАЯ ВЕРСИЯ
+// УЛЬТРА-ПРОСТАЯ ВЕРСИЯ — ГОЛОСА В ССЫЛКЕ
 // ============================================
-
-// 👇 ВСТАВЬ СВОИ ССЫЛКИ
-const GOOGLE_SHEET_CSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vR0dNK3abgB1r1WYc_G7EfBqfjWVpJZtO3yQS8gh1tYW4GnRsKn-7s0fQzz-sW611aBHii-KB7G9AU4/pub?gid=0&single=true&output=csv';
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwb1VO0H-ws1EJU75qcBMX27zkvm1z1ay-tcO_b0fBmq19AjiQxqkvCG41GaHFIRS-x/exec';
 
 const constructor = document.getElementById('constructor');
 const result = document.getElementById('result');
@@ -38,6 +34,7 @@ const backFromResultsBtn = document.getElementById('backFromResultsBtn');
 
 let currentPoll = null;
 let currentPollId = null;
+let currentVotes = [];
 
 function init() {
     handleRoute();
@@ -49,26 +46,48 @@ function handleRoute() {
     const hash = window.location.hash;
     
     if (hash.startsWith('#vote/')) {
-        const encodedData = hash.replace('#vote/', '');
+        const parts = hash.replace('#vote/', '').split('|');
+        const encodedPoll = parts[0];
+        const votesString = parts[1] || '';
+        
         try {
-            const decoded = decodeURIComponent(encodedData);
+            const decoded = decodeURIComponent(encodedPoll);
             currentPoll = JSON.parse(decoded);
             currentPollId = currentPoll.id;
+            
+            // Загружаем голоса из ссылки
+            if (votesString) {
+                const votesArray = votesString.split(',').map(Number);
+                currentVotes = votesArray;
+            } else {
+                currentVotes = new Array(currentPoll.options.length).fill(0);
+            }
+            
             showPollPage();
         } catch(e) {
-            alert('Ошибка: неправильная ссылка');
+            alert('Ошибка ссылки');
             showConstructorPage();
         }
     }
     else if (hash.startsWith('#results/')) {
-        const encodedData = hash.replace('#results/', '');
+        const parts = hash.replace('#results/', '').split('|');
+        const encodedPoll = parts[0];
+        const votesString = parts[1] || '';
+        
         try {
-            const decoded = decodeURIComponent(encodedData);
+            const decoded = decodeURIComponent(encodedPoll);
             currentPoll = JSON.parse(decoded);
             currentPollId = currentPoll.id;
+            
+            if (votesString) {
+                currentVotes = votesString.split(',').map(Number);
+            } else {
+                currentVotes = new Array(currentPoll.options.length).fill(0);
+            }
+            
             showResultsPage();
         } catch(e) {
-            alert('Ошибка: неправильная ссылка');
+            alert('Ошибка ссылки');
             showConstructorPage();
         }
     }
@@ -113,7 +132,7 @@ function showResultsPage() {
     resultsView.style.display = 'block';
     headerSubtitle.textContent = 'Результаты';
     resultsTitle.textContent = `Результаты: ${currentPoll.title}`;
-    loadResults();
+    renderStats(currentVotes);
 }
 
 function renderConstructorOptions() {
@@ -154,73 +173,19 @@ function createPoll() {
     
     const pollId = Date.now() + '_' + Math.random().toString(36).substr(2, 6);
     const pollData = { id: pollId, title, question, options };
+    const emptyVotes = new Array(options.length).fill(0);
     
     currentPoll = pollData;
     currentPollId = pollId;
+    currentVotes = emptyVotes;
     
-    const encoded = encodeURIComponent(JSON.stringify(pollData));
+    const encodedPoll = encodeURIComponent(JSON.stringify(pollData));
     const baseUrl = window.location.origin + window.location.pathname;
     
-    voteLink.textContent = baseUrl + '#vote/' + encoded;
-    resultLink.textContent = baseUrl + '#results/' + encoded;
+    voteLink.textContent = baseUrl + '#vote/' + encodedPoll + '|' + emptyVotes.join(',');
+    resultLink.textContent = baseUrl + '#results/' + encodedPoll + '|' + emptyVotes.join(',');
     
     showResultPage();
-}
-
-// ========== ЧТЕНИЕ ИЗ ТАБЛИЦЫ ==========
-async function loadResults() {
-    if (!currentPoll) return;
-    
-    statsContainer.innerHTML = '<div class="stat-item">📡 Загрузка...</div>';
-    
-    try {
-        const response = await fetch(GOOGLE_SHEET_CSV);
-        const text = await response.text();
-        
-        const lines = text.split('\n');
-        const votes = new Array(currentPoll.options.length).fill(0);
-        
-        for (let i = 1; i < lines.length; i++) {
-            const line = lines[i].trim();
-            if (line === '') continue;
-            
-            if (line.includes(currentPollId)) {
-                const parts = line.split(',');
-                if (parts.length >= 2) {
-                    const idx = parseInt(parts[1]);
-                    if (!isNaN(idx) && idx >= 0 && idx < votes.length) {
-                        votes[idx]++;
-                    }
-                }
-            }
-        }
-        
-        renderStats(votes);
-    } catch(e) {
-        console.error('Ошибка:', e);
-        statsContainer.innerHTML = '<div class="stat-item">⚠️ Ошибка загрузки</div>';
-        renderStats(new Array(currentPoll.options.length).fill(0));
-    }
-}
-
-// ========== СОХРАНЕНИЕ В ТАБЛИЦУ ==========
-async function saveVote(pollId, optionIndex, optionText) {
-    try {
-        await fetch(APPS_SCRIPT_URL, {
-            method: 'POST',
-            mode: 'no-cors',
-            body: JSON.stringify({
-                pollId: pollId,
-                optionIndex: optionIndex,
-                optionText: optionText,
-                date: new Date().toISOString()
-            })
-        });
-        return true;
-    } catch(e) {
-        console.error('Ошибка:', e);
-        return false;
-    }
 }
 
 function renderPollOptions() {
@@ -245,7 +210,7 @@ function renderPollOptions() {
     });
 }
 
-async function submitVote() {
+function submitVote() {
     const selected = document.querySelector('input[name="vote"]:checked');
     if (!selected) {
         alert('Выбери вариант!');
@@ -253,17 +218,26 @@ async function submitVote() {
     }
     
     const index = parseInt(selected.value);
-    const optionText = currentPoll.options[index];
     
-    voteBtn.textContent = '⏳ Отправка...';
-    voteBtn.disabled = true;
+    // Копируем массив голосов
+    const newVotes = [...currentVotes];
+    newVotes[index]++;
     
-    await saveVote(currentPollId, index, optionText);
+    // Создаём новую ссылку с обновлёнными голосами
+    const encodedPoll = encodeURIComponent(JSON.stringify(currentPoll));
+    const baseUrl = window.location.origin + window.location.pathname;
     
-    voteBtn.textContent = '🗳️ Проголосовать';
-    voteBtn.disabled = false;
+    const newVoteLink = baseUrl + '#vote/' + encodedPoll + '|' + newVotes.join(',');
+    const newResultLink = baseUrl + '#results/' + encodedPoll + '|' + newVotes.join(',');
     
-    alert('✅ Голос учтён!');
+    // Показываем сообщение
+    alert('✅ Голос учтён!\n\nСкопируйте новую ссылку и поделитесь ею с другими, чтобы обновить результаты.');
+    
+    // Обновляем ссылки на странице
+    voteLink.textContent = newVoteLink;
+    resultLink.textContent = newResultLink;
+    currentVotes = newVotes;
+    
     showResultsPage();
 }
 
