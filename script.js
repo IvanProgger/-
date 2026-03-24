@@ -228,7 +228,7 @@ async function loadResultsFromSheet() {
 // ============================================
 async function saveVoteToSheet(pollId, optionIndex, optionText) {
     // ВАЖНО: замени URL на свой из Apps Script
-    const scriptURL = 'https://script.google.com/macros/s/https://script.google.com/macros/s/AKfycbwhX3MnwwKTaqOqB-YhP5ORr8kHfXGClushS4IIkdc5bFka0QvlbTYFVZ7ONWwys3V0/exec/exec';
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbynYGM7H8Jb8nqYmfJG4xwbiVAfdXV7SFTAJSGgHLEtQV3cc3m8R_oWqdRIQRKXzacE/exec';
     
     try {
         await fetch(scriptURL, {
