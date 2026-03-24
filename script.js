@@ -1,142 +1,184 @@
-// Хранилище данных (все в памяти, для простоты)
-let currentPoll = {
-    id: 'poll_' + Date.now(),
-    title: 'Опрос группы',
-    question: 'Куда идем?',
-    options: ['Кино', 'Парк'],
-    votes: [0, 0] // количество голосов для каждого варианта
-};
+// ============================================
+// Хранилище данных
+// ============================================
 
-let pollMode = 'constructor'; // constructor, poll, results
+// База данных всех опросов
+let pollsDatabase = {};
+
+// ID текущего опроса (берётся из URL)
+let currentPollId = null;
+
+// Текущий режим: constructor, poll, results
+let currentMode = 'constructor';
 
 // DOM элементы
-const newPollBtn = document.getElementById('newPollBtn');
 const constructor = document.getElementById('constructor');
 const result = document.getElementById('result');
 const pollView = document.getElementById('pollView');
 const resultsView = document.getElementById('resultsView');
+const headerSubtitle = document.getElementById('headerSubtitle');
 
+// Элементы конструктора
 const pollTitle = document.getElementById('pollTitle');
 const questionText = document.getElementById('questionText');
 const optionsContainer = document.getElementById('optionsContainer');
 const addOptionBtn = document.getElementById('addOptionBtn');
 const createPollBtn = document.getElementById('createPollBtn');
 
+// Элементы страницы с результатами создания
 const voteLink = document.getElementById('voteLink');
 const resultLink = document.getElementById('resultLink');
+const copyVoteBtn = document.getElementById('copyVoteBtn');
+const copyResultBtn = document.getElementById('copyResultBtn');
+const viewPollBtn = document.getElementById('viewPollBtn');
 const createAnotherBtn = document.getElementById('createAnotherBtn');
 
+// Элементы страницы голосования
 const viewPollTitle = document.getElementById('viewPollTitle');
 const viewPollQuestion = document.getElementById('viewPollQuestion');
 const optionsList = document.getElementById('optionsList');
 const voteBtn = document.getElementById('voteBtn');
-const backToConstructorBtn = document.getElementById('backToConstructorBtn');
+const backFromPollBtn = document.getElementById('backFromPollBtn');
 
+// Элементы страницы результатов
 const resultsTitle = document.getElementById('resultsTitle');
 const statsContainer = document.getElementById('statsContainer');
 const progressContainer = document.getElementById('progressContainer');
-const backToConstructorFromResultsBtn = document.getElementById('backToConstructorFromResultsBtn');
+const backFromResultsBtn = document.getElementById('backFromResultsBtn');
 
-// Кнопки копирования
-const copyButtons = document.querySelectorAll('.copy-btn');
-
-// --- Инициализация ---
+// ============================================
+// Инициализация приложения
+// ============================================
 function init() {
-    // Показываем только конструктор при старте
-    showConstructor();
+    // Загружаем сохранённые опросы
+    loadFromStorage();
     
-    // Заполняем демо-данными
-    pollTitle.value = currentPoll.title;
-    questionText.value = currentPoll.question;
-    renderOptions();
+    // Определяем, какой режим показывать по URL
+    handleRoute();
     
-    // Обновляем ссылки
-    updateLinks();
-    
-    // Добавляем обработчики
+    // Добавляем обработчики событий
     addEventListeners();
 }
 
-function addEventListeners() {
-    newPollBtn.addEventListener('click', showConstructor);
-    addOptionBtn.addEventListener('click', addOption);
-    createPollBtn.addEventListener('click', createPoll);
-    createAnotherBtn.addEventListener('click', showConstructor);
-    voteBtn.addEventListener('click', submitVote);
-    backToConstructorBtn.addEventListener('click', showConstructor);
-    backToConstructorFromResultsBtn.addEventListener('click', showConstructor);
+// ============================================
+// Обработка маршрутов (что показывать по ссылке)
+// ============================================
+function handleRoute() {
+    const hash = window.location.hash;
     
-    // Копирование ссылок
-    copyButtons.forEach(btn => {
-        btn.addEventListener('click', function() {
-            const targetId = this.dataset.copy;
-            const linkElement = document.getElementById(targetId);
-            const textToCopy = linkElement.textContent;
-            
-            navigator.clipboard.writeText(textToCopy).then(() => {
-                const originalText = this.textContent;
-                this.textContent = '✅ Скопировано!';
-                setTimeout(() => {
-                    this.textContent = originalText;
-                }, 1500);
-            });
-        });
-    });
+    if (hash.startsWith('#vote/')) {
+        // Страница голосования
+        const pollId = hash.replace('#vote/', '');
+        currentPollId = pollId;
+        
+        if (pollsDatabase[pollId]) {
+            showPollPage(pollId);
+        } else {
+            alert('Опрос не найден!');
+            window.location.hash = '';
+            showConstructorPage();
+        }
+    } 
+    else if (hash.startsWith('#results/')) {
+        // Страница результатов
+        const pollId = hash.replace('#results/', '');
+        currentPollId = pollId;
+        
+        if (pollsDatabase[pollId]) {
+            showResultsPage(pollId);
+        } else {
+            alert('Опрос не найден!');
+            window.location.hash = '';
+            showConstructorPage();
+        }
+    } 
+    else {
+        // Главная страница (конструктор)
+        showConstructorPage();
+    }
 }
 
-// --- Управление отображением ---
-function showConstructor() {
-    pollMode = 'constructor';
+// ============================================
+// Функции для показа разных страниц
+// ============================================
+function showConstructorPage() {
+    currentMode = 'constructor';
+    currentPollId = null;
+    
     constructor.style.display = 'block';
     result.style.display = 'none';
     pollView.style.display = 'none';
     resultsView.style.display = 'none';
-    newPollBtn.style.display = 'block';
+    
+    headerSubtitle.textContent = 'Создай опрос за минуту';
 }
 
-function showResult() {
-    pollMode = 'result';
+function showResultPage(pollId) {
+    currentMode = 'result';
+    currentPollId = pollId;
+    
     constructor.style.display = 'none';
     result.style.display = 'block';
     pollView.style.display = 'none';
     resultsView.style.display = 'none';
-    newPollBtn.style.display = 'none';
+    
+    headerSubtitle.textContent = 'Опрос готов!';
+    
+    // Обновляем ссылки
+    const baseUrl = window.location.origin + window.location.pathname;
+    voteLink.textContent = baseUrl + '#vote/' + pollId;
+    resultLink.textContent = baseUrl + '#results/' + pollId;
 }
 
-function showPollView() {
-    pollMode = 'poll';
+function showPollPage(pollId) {
+    currentMode = 'poll';
+    currentPollId = pollId;
+    
+    const poll = pollsDatabase[pollId];
+    if (!poll) return;
+    
     constructor.style.display = 'none';
     result.style.display = 'none';
     pollView.style.display = 'block';
     resultsView.style.display = 'none';
-    newPollBtn.style.display = 'none';
     
-    // Заполняем данные
-    viewPollTitle.textContent = currentPoll.title;
-    viewPollQuestion.textContent = currentPoll.question;
+    headerSubtitle.textContent = 'Голосование';
+    viewPollTitle.textContent = poll.title;
+    viewPollQuestion.textContent = poll.question;
     
     // Рендерим варианты
-    renderPollOptions();
+    renderPollOptions(poll);
 }
 
-function showResultsView() {
-    pollMode = 'results';
+function showResultsPage(pollId) {
+    currentMode = 'results';
+    currentPollId = pollId;
+    
+    const poll = pollsDatabase[pollId];
+    if (!poll) return;
+    
     constructor.style.display = 'none';
     result.style.display = 'none';
     pollView.style.display = 'none';
     resultsView.style.display = 'block';
-    newPollBtn.style.display = 'none';
     
-    // Заполняем данные
-    resultsTitle.textContent = `Результаты: ${currentPoll.title}`;
-    renderStats();
+    headerSubtitle.textContent = 'Результаты';
+    resultsTitle.textContent = `Результаты: ${poll.title}`;
+    
+    // Рендерим статистику
+    renderStats(poll);
 }
 
-// --- Работа с опциями ---
+// ============================================
+// Работа с опциями в конструкторе
+// ============================================
 function renderOptions() {
+    // Берём текущий опрос (в конструкторе он временный)
+    const tempPoll = getTempPoll();
+    
     optionsContainer.innerHTML = '<label>Варианты ответа</label>';
     
-    currentPoll.options.forEach((opt, index) => {
+    tempPoll.options.forEach((opt, index) => {
         const div = document.createElement('div');
         div.className = 'option-item';
         div.innerHTML = `
@@ -150,69 +192,101 @@ function renderOptions() {
     
     // Добавляем обработчики изменения
     document.querySelectorAll('.option-input').forEach(input => {
-        input.addEventListener('input', updateOptionsFromInputs);
+        input.addEventListener('input', updateTempOptions);
     });
+}
+
+function getTempPoll() {
+    return {
+        title: pollTitle.value || 'Опрос группы',
+        question: questionText.value || 'Куда идем?',
+        options: ['Кино', 'Парк'],
+        votes: [0, 0]
+    };
+}
+
+function updateTempOptions() {
+    const inputs = document.querySelectorAll('.option-input');
+    // Просто сохраняем в data-атрибутах, ничего не делаем
 }
 
 function addOption() {
-    currentPoll.options.push('Новый вариант');
-    currentPoll.votes.push(0);
-    renderOptions();
+    const inputs = document.querySelectorAll('.option-input');
+    const options = [];
+    inputs.forEach(input => {
+        if (input.value.trim()) options.push(input.value);
+    });
+    options.push('Новый вариант');
+    
+    // Перерисовываем
+    renderOptionsWithValues(options);
 }
 
-function updateOptionsFromInputs() {
-    const inputs = document.querySelectorAll('.option-input');
-    const newOptions = [];
-    inputs.forEach(input => {
-        if (input.value.trim() !== '') {
-            newOptions.push(input.value);
-        }
+function renderOptionsWithValues(options) {
+    optionsContainer.innerHTML = '<label>Варианты ответа</label>';
+    
+    options.forEach((opt, index) => {
+        const div = document.createElement('div');
+        div.className = 'option-item';
+        div.innerHTML = `
+            <input type="text" class="big-input option-input" 
+                   value="${opt}" 
+                   placeholder="Вариант ${index + 1}"
+                   data-index="${index}">
+        `;
+        optionsContainer.appendChild(div);
     });
     
-    // Если есть пустые, не удаляем, а просто игнорируем
-    if (newOptions.length > 0) {
-        // Сохраняем старые голоса для существующих опций
-        const oldVotes = [...currentPoll.votes];
-        currentPoll.options = [...newOptions];
-        
-        // Подгоняем длину массива голосов
-        while (currentPoll.votes.length < currentPoll.options.length) {
-            currentPoll.votes.push(0);
-        }
-        while (currentPoll.votes.length > currentPoll.options.length) {
-            currentPoll.votes.pop();
-        }
+    document.querySelectorAll('.option-input').forEach(input => {
+        input.addEventListener('input', function() {
+            // Ничего не делаем, просто даём пользователю редактировать
+        });
+    });
+}
+
+// ============================================
+// Создание нового опроса
+// ============================================
+function createNewPoll() {
+    // Собираем данные
+    const title = pollTitle.value || 'Опрос группы';
+    const question = questionText.value || 'Куда идем?';
+    
+    const inputs = document.querySelectorAll('.option-input');
+    const options = [];
+    inputs.forEach(input => {
+        if (input.value.trim()) options.push(input.value);
+    });
+    
+    if (options.length < 2) {
+        alert('Добавь хотя бы 2 варианта ответа!');
+        return null;
     }
+    
+    // Создаём новый опрос
+    const pollId = 'poll_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+    
+    pollsDatabase[pollId] = {
+        id: pollId,
+        title: title,
+        question: question,
+        options: options,
+        votes: new Array(options.length).fill(0)
+    };
+    
+    // Сохраняем
+    saveToStorage();
+    
+    return pollId;
 }
 
-// --- Создание опроса ---
-function createPoll() {
-    // Обновляем данные из полей
-    currentPoll.title = pollTitle.value || 'Опрос группы';
-    currentPoll.question = questionText.value || 'Куда идем?';
-    updateOptionsFromInputs();
-    
-    // Генерируем новый ID
-    currentPoll.id = 'poll_' + Date.now();
-    
-    // Обновляем ссылки
-    updateLinks();
-    
-    // Показываем результат
-    showResult();
-}
-
-function updateLinks() {
-    const baseUrl = 'https://studentpoll.ru';
-    voteLink.textContent = `${baseUrl}/vote/${currentPoll.id}`;
-    resultLink.textContent = `${baseUrl}/results/${currentPoll.id}`;
-}
-
-// --- Голосование ---
-function renderPollOptions() {
+// ============================================
+// Рендеринг страницы голосования
+// ============================================
+function renderPollOptions(poll) {
     optionsList.innerHTML = '';
     
-    currentPoll.options.forEach((opt, index) => {
+    poll.options.forEach((opt, index) => {
         const div = document.createElement('div');
         div.className = 'option-item-view';
         div.dataset.index = index;
@@ -222,12 +296,10 @@ function renderPollOptions() {
         `;
         
         div.addEventListener('click', function() {
-            // Снимаем выделение со всех
             document.querySelectorAll('.option-item-view').forEach(el => {
                 el.classList.remove('selected');
                 el.querySelector('input').checked = false;
             });
-            // Выделяем текущий
             this.classList.add('selected');
             this.querySelector('input').checked = true;
         });
@@ -236,39 +308,47 @@ function renderPollOptions() {
     });
 }
 
+// ============================================
+// Голосование
+// ============================================
 function submitVote() {
-    const selected = document.querySelector('input[name="vote"]:checked');
+    if (!currentPollId) return;
     
+    const selected = document.querySelector('input[name="vote"]:checked');
     if (!selected) {
-        alert('Выберите вариант ответа!');
+        alert('Выбери вариант ответа!');
         return;
     }
     
+    const poll = pollsDatabase[currentPollId];
     const index = parseInt(selected.value);
-    currentPoll.votes[index]++;
+    poll.votes[index]++;
+    
+    saveToStorage();
     
     // Показываем результаты
-    showResultsView();
+    window.location.hash = 'results/' + currentPollId;
+    showResultsPage(currentPollId);
 }
 
-// --- Статистика ---
-function renderStats() {
-    const totalVotes = currentPoll.votes.reduce((a, b) => a + b, 0);
+// ============================================
+// Рендеринг статистики
+// ============================================
+function renderStats(poll) {
+    const totalVotes = poll.votes.reduce((a, b) => a + b, 0);
     
     statsContainer.innerHTML = '';
     progressContainer.innerHTML = '';
     
-    currentPoll.options.forEach((opt, index) => {
-        const votes = currentPoll.votes[index];
+    poll.options.forEach((opt, index) => {
+        const votes = poll.votes[index];
         const percent = totalVotes > 0 ? Math.round((votes / totalVotes) * 100) : 0;
         
-        // Статистика текстом
         const statDiv = document.createElement('div');
         statDiv.className = 'stat-item';
         statDiv.innerHTML = `${opt}: <span class="stat-count">${votes}</span> голосов (${percent}%)`;
         statsContainer.appendChild(statDiv);
         
-        // Прогресс-бар
         if (totalVotes > 0) {
             const barDiv = document.createElement('div');
             barDiv.className = 'progress-bar';
@@ -292,5 +372,93 @@ function renderStats() {
     }
 }
 
-// --- Запуск ---
+// ============================================
+// Сохранение в localStorage
+// ============================================
+function saveToStorage() {
+    localStorage.setItem('pollsDatabase', JSON.stringify(pollsDatabase));
+}
+
+function loadFromStorage() {
+    const saved = localStorage.getItem('pollsDatabase');
+    if (saved) {
+        try {
+            pollsDatabase = JSON.parse(saved);
+        } catch(e) {
+            pollsDatabase = {};
+        }
+    }
+}
+
+// ============================================
+// Копирование в буфер обмена
+// ============================================
+function copyToClipboard(text, button) {
+    navigator.clipboard.writeText(text).then(() => {
+        const original = button.textContent;
+        button.textContent = '✅ Скопировано!';
+        setTimeout(() => {
+            button.textContent = original;
+        }, 1500);
+    });
+}
+
+// ============================================
+// Обработчики событий
+// ============================================
+function addEventListeners() {
+    // Конструктор
+    addOptionBtn.addEventListener('click', addOption);
+    
+    createPollBtn.addEventListener('click', () => {
+        const pollId = createNewPoll();
+        if (pollId) {
+            window.location.hash = '';
+            showResultPage(pollId);
+        }
+    });
+    
+    // Страница результата
+    copyVoteBtn.addEventListener('click', () => {
+        copyToClipboard(voteLink.textContent, copyVoteBtn);
+    });
+    
+    copyResultBtn.addEventListener('click', () => {
+        copyToClipboard(resultLink.textContent, copyResultBtn);
+    });
+    
+    viewPollBtn.addEventListener('click', () => {
+        if (currentPollId) {
+            window.location.hash = 'vote/' + currentPollId;
+            showPollPage(currentPollId);
+        }
+    });
+    
+    createAnotherBtn.addEventListener('click', () => {
+        window.location.hash = '';
+        showConstructorPage();
+        renderOptions();
+    });
+    
+    // Страница голосования
+    voteBtn.addEventListener('click', submitVote);
+    
+    backFromPollBtn.addEventListener('click', () => {
+        window.location.hash = '';
+        showConstructorPage();
+    });
+    
+    // Страница результатов
+    backFromResultsBtn.addEventListener('click', () => {
+        window.location.hash = '';
+        showConstructorPage();
+    });
+    
+    // Обработка изменения хэша (кнопки назад/вперед в браузере)
+    window.addEventListener('hashchange', handleRoute);
+}
+
+// ============================================
+// Запуск
+// ============================================
 document.addEventListener('DOMContentLoaded', init);
