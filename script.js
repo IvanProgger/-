@@ -3,7 +3,7 @@
 // ============================================
 
 // 👇 ВСТАВЬ СВОИ ССЫЛКИ
-const GOOGLE_SHEET_CSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vR0dNK3abgB1r1WYc_G7EfBqfjWVpJZtO3yQS8gh1tYW4GnRsKn-7s0fQzz-sW611aBHii-KB7G9AU4/pub?output=csv';
+const GOOGLE_SHEET_CSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vR0dNK3abgB1r1WYc_G7EfBqfjWVpJZtO3yQS8gh1tYW4GnRsKn-7s0fQzz-sW611aBHii-KB7G9AU4/pub?gid=0&single=true&output=csv';
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwb1VO0H-ws1EJU75qcBMX27zkvm1z1ay-tcO_b0fBmq19AjiQxqkvCG41GaHFIRS-x/exec';
 
 const constructor = document.getElementById('constructor');
