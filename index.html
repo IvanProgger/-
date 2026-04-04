@@ -2,101 +2,554 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
     <title>Студенческий опросник</title>
-    <link rel="stylesheet" href="style.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+        }
+        body {
+            background: #f0f0f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 700px;
+            width: 100%;
+            background: white;
+            border-radius: 32px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            padding: 32px;
+        }
+        h1 {
+            font-size: 32px;
+            font-weight: 700;
+            color: black;
+            border-bottom: 3px solid black;
+            padding-bottom: 12px;
+            margin-bottom: 20px;
+        }
+        .sub {
+            color: #555;
+            margin-bottom: 28px;
+            font-size: 14px;
+        }
+        .question-card {
+            background: #f8f9fc;
+            border-radius: 24px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+        .question-text {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: #1a1a1a;
+        }
+        .options-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .option-btn {
+            background: white;
+            border: 2px solid #ddd;
+            border-radius: 60px;
+            padding: 14px 24px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #1a1a1a;
+            text-align: left;
+        }
+        .option-btn:hover {
+            border-color: black;
+            background: #f5f5f5;
+        }
+        .option-btn.selected {
+            border-color: black;
+            background: #e8e8e8;
+        }
+        .vote-btn {
+            width: 100%;
+            padding: 16px;
+            margin: 16px 0;
+            background: black;
+            color: white;
+            border: none;
+            border-radius: 60px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .vote-btn:hover {
+            background: #333;
+        }
+        .results-block {
+            margin-top: 24px;
+            background: #f8f9fc;
+            border-radius: 24px;
+            padding: 24px;
+        }
+        .result-item {
+            margin-bottom: 20px;
+        }
+        .result-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+        }
+        .bar-bg {
+            background: #e0e0e0;
+            border-radius: 20px;
+            height: 36px;
+            overflow: hidden;
+        }
+        .bar-fill {
+            background: black;
+            height: 100%;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 16px;
+            color: white;
+            font-weight: 700;
+            font-size: 14px;
+        }
+        .total-votes {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 15px;
+            color: #555;
+            font-weight: 600;
+        }
+        .inp {
+            width: 100%;
+            padding: 14px;
+            margin: 8px 0;
+            border: 2px solid #ddd;
+            border-radius: 16px;
+            font-size: 16px;
+        }
+        .inp:focus {
+            outline: none;
+            border-color: black;
+        }
+        .btn {
+            width: 100%;
+            padding: 14px;
+            margin: 8px 0;
+            border: none;
+            border-radius: 60px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .btn-black {
+            background: black;
+            color: white;
+        }
+        .btn-black:hover {
+            background: #333;
+        }
+        .btn-gray {
+            background: #e0e0e0;
+            color: #333;
+        }
+        .btn-gray:hover {
+            background: #ccc;
+        }
+        .share-box {
+            background: #f5f5f5;
+            padding: 24px;
+            border-radius: 24px;
+            text-align: center;
+        }
+        .share-item {
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #ddd;
+        }
+        .share-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        .vote-url {
+            word-break: break-all;
+            background: white;
+            padding: 12px;
+            border-radius: 12px;
+            margin: 10px 0;
+            font-size: 12px;
+            border: 1px solid #ddd;
+        }
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: black;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 60px;
+            font-weight: 600;
+            z-index: 1000;
+            animation: fadeOut 2.5s forwards;
+        }
+        @keyframes fadeOut {
+            0% { opacity: 1; }
+            70% { opacity: 1; }
+            100% { opacity: 0; visibility: hidden; }
+        }
+        .label-small {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        .opt-item {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin: 8px 0;
+        }
+        .opt-item .inp {
+            flex: 1;
+            margin: 0;
+        }
+        .del-opt-btn {
+            background: #e0e0e0;
+            border: none;
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .del-opt-btn:hover {
+            background: #ccc;
+        }
+    </style>
 </head>
 <body>
-    <div class="app">
-        <header class="header">
-            <h1>📊 Студенческий опросник</h1>
-            <p class="subtitle" id="headerSubtitle">Создай опрос за минуту</p>
-        </header>
+<div class="container">
+    <h1>📊 Студенческий опросник</h1>
+    <div class="sub">Создай опрос и поделись ссылкой</div>
 
-        <main>
-            <!-- КОНСТРУКТОР (по умолчанию скрыт) -->
-            <div class="constructor" id="constructor" style="display: none;">
-                <h2>Создание опроса</h2>
-                
-                <div class="form-group">
-                    <label for="pollTitle">Название опроса</label>
-                    <input type="text" id="pollTitle" class="big-input" placeholder="Например: Куда пойдем в воскресенье?" value="Опрос группы">
-                </div>
-
-                <div class="form-group">
-                    <label for="questionText">Вопрос</label>
-                    <input type="text" id="questionText" class="big-input" placeholder="Текст вопроса" value="Куда идем?">
-                </div>
-
-                <div class="options-container" id="optionsContainer">
-                    <label>Варианты ответа</label>
-                    <div class="option-item">
-                        <input type="text" class="big-input option-input" placeholder="Вариант 1" value="Кино">
-                    </div>
-                    <div class="option-item">
-                        <input type="text" class="big-input option-input" placeholder="Вариант 2" value="Парк">
-                    </div>
-                </div>
-
-                <div class="buttons-row">
-                    <button class="btn btn-secondary" id="addOptionBtn">➕ Добавить вариант</button>
-                    <button class="btn btn-success" id="createPollBtn">✅ Создать опрос</button>
-                </div>
-            </div>
-
-            <!-- РЕЗУЛЬТАТ (ссылки на опрос) -->
-            <div class="result" id="result" style="display: none;">
-                <h2>🎉 Опрос готов!</h2>
-                
-                <div class="link-block">
-                    <p class="link-label">🔗 Ссылка для голосования (кинь друзьям):</p>
-                    <div class="link-copy">
-                        <span class="link-url" id="voteLink">https://studentpoll.ru/vote/123</span>
-                        <button class="btn btn-small copy-btn" id="copyVoteBtn">📋 Копировать</button>
-                    </div>
-                </div>
-
-                <div class="link-block">
-                    <p class="link-label">🔒 Ссылка для результатов (только для тебя):</p>
-                    <div class="link-copy">
-                        <span class="link-url" id="resultLink">https://studentpoll.ru/results/123</span>
-                        <button class="btn btn-small copy-btn" id="copyResultBtn">📋 Копировать</button>
-                    </div>
-                </div>
-
-                <div class="buttons-row">
-                    <button class="btn btn-primary" id="viewPollBtn">👀 Посмотреть опрос</button>
-                    <button class="btn btn-secondary" id="createAnotherBtn">🔄 Создать новый</button>
-                </div>
-            </div>
-
-            <!-- ГОЛОСОВАНИЕ (то, что нужно другу) -->
-            <div class="poll-view" id="pollView" style="display: none;">
-                <h2 id="viewPollTitle">Опрос группы</h2>
-                <p class="poll-question" id="viewPollQuestion">Куда идем?</p>
-                
-                <div class="options-list" id="optionsList"></div>
-
-                <div class="buttons-row">
-                    <button class="btn btn-primary btn-large" id="voteBtn">🗳️ Проголосовать</button>
-                    <button class="btn btn-secondary" id="backFromPollBtn">← Назад</button>
-                </div>
-            </div>
-
-            <!-- РЕЗУЛЬТАТЫ (для того, кто создал) -->
-            <div class="results-view" id="resultsView" style="display: none;">
-                <h2 id="resultsTitle">Результаты опроса</h2>
-                
-                <div class="stats-container" id="statsContainer"></div>
-                <div class="progress-container" id="progressContainer"></div>
-
-                <div class="buttons-row">
-                    <button class="btn btn-secondary" id="backFromResultsBtn">← К опросам</button>
-                </div>
-            </div>
-        </main>
+    <!-- Экран 1: создание опроса -->
+    <div id="screen1">
+        <input type="text" id="pollTitle" class="inp" placeholder="Название опроса" value="Опрос группы">
+        <input type="text" id="pollQuestion" class="inp" placeholder="Вопрос" value="Куда идём?">
+        <div id="optionsList"></div>
+        <button id="addOptBtn" class="btn btn-gray">➕ Добавить вариант</button>
+        <button id="createPollBtn" class="btn btn-black">✅ Создать опрос</button>
     </div>
 
-    <script src="script.js"></script>
+    <!-- Экран 2: ссылки -->
+    <div id="screen2" style="display:none">
+        <div class="share-box">
+            <div class="share-item">
+                <div class="label-small">🔗 Ссылка для голосования (кинь друзьям)</div>
+                <div id="voteLink" class="vote-url"></div>
+                <button id="copyVoteBtn" class="btn btn-black" style="width:auto; padding:8px 20px;">📋 Копировать</button>
+            </div>
+            <div class="share-item">
+                <div class="label-small">🔒 Ссылка для результатов (только для тебя)</div>
+                <div id="resultsLink" class="vote-url"></div>
+                <button id="copyResultsBtn" class="btn btn-black" style="width:auto; padding:8px 20px;">📋 Копировать</button>
+            </div>
+        </div>
+        <button id="newPollBtn" class="btn btn-gray" style="margin-top:20px;">🔄 Создать новый</button>
+    </div>
+
+    <!-- Экран 3: голосование -->
+    <div id="screen3" style="display:none">
+        <div class="question-card">
+            <div class="question-text" id="voteQuestionText"></div>
+            <div class="options-grid" id="voteOptions"></div>
+        </div>
+        <button id="submitVoteBtn" class="vote-btn">🗳️ Проголосовать</button>
+        <button id="backBtn1" class="btn btn-gray">← Назад</button>
+    </div>
+
+    <!-- Экран 4: результаты -->
+    <div id="screen4" style="display:none">
+        <div class="results-block">
+            <div id="resList"></div>
+            <div class="total-votes" id="totalVotes"></div>
+        </div>
+        <button id="backBtn2" class="btn btn-gray" style="margin-top:20px;">← К опросам</button>
+    </div>
+</div>
+
+<script>
+    // 👇 ВСТАВЬ СВОЮ ССЫЛКУ ОТ GOOGLE APPS SCRIPT
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxoKVUqsgc5S6SUqp4bYwX525KOybscKDhD0vf6Y6zBtf_BgZu5kPyMwDYnl_xHDo7K/exec';
+
+    let currentPoll = null;
+
+    function toast(msg) {
+        let t = document.createElement('div');
+        t.className = 'toast';
+        t.innerText = msg;
+        document.body.appendChild(t);
+        setTimeout(() => t.remove(), 2500);
+    }
+
+    function showScreen(n) {
+        document.getElementById('screen1').style.display = n === 1 ? 'block' : 'none';
+        document.getElementById('screen2').style.display = n === 2 ? 'block' : 'none';
+        document.getElementById('screen3').style.display = n === 3 ? 'block' : 'none';
+        document.getElementById('screen4').style.display = n === 4 ? 'block' : 'none';
+    }
+
+    // Рендер вариантов в конструкторе
+    function renderOptionsList() {
+        let container = document.getElementById('optionsList');
+        let inputs = container.querySelectorAll('.optInp');
+        let values = [];
+        inputs.forEach(inp => values.push(inp.value));
+        
+        container.innerHTML = '';
+        values.forEach((val, idx) => {
+            let div = document.createElement('div');
+            div.className = 'opt-item';
+            div.innerHTML = `
+                <input type="text" class="optInp inp" value="${val.replace(/"/g, '&quot;')}">
+                <button class="del-opt-btn" data-index="${idx}">❌</button>
+            `;
+            container.appendChild(div);
+        });
+        
+        document.querySelectorAll('.del-opt-btn').forEach(btn => {
+            btn.onclick = (e) => {
+                let idx = parseInt(btn.dataset.index);
+                let allInputs = document.querySelectorAll('#optionsList .optInp');
+                if(allInputs.length <= 2) {
+                    toast('❌ Должно быть минимум 2 варианта');
+                    return;
+                }
+                btn.parentElement.remove();
+            };
+        });
+        
+        document.querySelectorAll('#optionsList .optInp').forEach(inp => {
+            inp.oninput = () => {};
+        });
+    }
+
+    async function loadAllVotes() {
+        try {
+            let res = await fetch(SCRIPT_URL);
+            let data = await res.json();
+            return data;
+        } catch(e) {
+            console.error('Ошибка загрузки:', e);
+            return [];
+        }
+    }
+
+    async function saveVoteToSheet(pollId, optionIndex, optionText) {
+        try {
+            await fetch(SCRIPT_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                body: JSON.stringify({ pollId, optionIndex, optionText })
+            });
+            return true;
+        } catch(e) {
+            console.error('Ошибка сохранения:', e);
+            return false;
+        }
+    }
+
+    async function showResultsScreen(pollId, options) {
+        let allVotes = await loadAllVotes();
+        let votes = new Array(options.length).fill(0);
+        
+        for(let i = 1; i < allVotes.length; i++) {
+            let row = allVotes[i];
+            if(row && row[0] === pollId) {
+                let idx = parseInt(row[1]);
+                if(idx >= 0 && idx < votes.length) votes[idx]++;
+            }
+        }
+        
+        let total = votes.reduce((a,b)=>a+b,0);
+        let html = '';
+        for(let i = 0; i < options.length; i++) {
+            let cnt = votes[i];
+            let pct = total ? Math.round(cnt / total * 100) : 0;
+            html += `
+                <div class="result-item">
+                    <div class="result-label">
+                        <span>${options[i]}</span>
+                        <span>${cnt} голосов (${pct}%)</span>
+                    </div>
+                    <div class="bar-bg">
+                        <div class="bar-fill" style="width: ${pct}%; min-width: 40px;">${pct > 8 ? pct + '%' : ''}</div>
+                    </div>
+                </div>
+            `;
+        }
+        document.getElementById('resList').innerHTML = html;
+        document.getElementById('totalVotes').innerText = `📊 Всего голосов: ${total}`;
+        showScreen(4);
+    }
+
+    document.getElementById('addOptBtn').onclick = () => {
+        let container = document.getElementById('optionsList');
+        let div = document.createElement('div');
+        div.className = 'opt-item';
+        div.innerHTML = `
+            <input type="text" class="optInp inp" placeholder="Новый вариант">
+            <button class="del-opt-btn">❌</button>
+        `;
+        container.appendChild(div);
+        
+        div.querySelector('.del-opt-btn').onclick = () => {
+            if(document.querySelectorAll('#optionsList .opt-item').length <= 2) {
+                toast('❌ Должно быть минимум 2 варианта');
+                return;
+            }
+            div.remove();
+        };
+    };
+
+    document.getElementById('createPollBtn').onclick = () => {
+        let title = document.getElementById('pollTitle').value || 'Опрос группы';
+        let question = document.getElementById('pollQuestion').value || 'Куда идём?';
+        let opts = [];
+        document.querySelectorAll('#optionsList .optInp').forEach(inp => {
+            if(inp.value.trim()) opts.push(inp.value.trim());
+        });
+        if(opts.length < 2) {
+            alert('Минимум 2 варианта');
+            return;
+        }
+        let pollId = Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+        let poll = { id: pollId, title, question, options: opts };
+        
+        let baseUrl = window.location.href.split('#')[0];
+        let encodedData = encodeURIComponent(JSON.stringify(poll));
+        
+        document.getElementById('voteLink').innerText = baseUrl + '#vote=' + encodedData;
+        document.getElementById('resultsLink').innerText = baseUrl + '#results=' + pollId + '&data=' + encodedData;
+        
+        showScreen(2);
+    };
+
+    document.getElementById('copyVoteBtn').onclick = () => {
+        navigator.clipboard.writeText(document.getElementById('voteLink').innerText);
+        toast('✅ Ссылка для голосования скопирована');
+    };
+    
+    document.getElementById('copyResultsBtn').onclick = () => {
+        navigator.clipboard.writeText(document.getElementById('resultsLink').innerText);
+        toast('✅ Ссылка для результатов скопирована');
+    };
+    
+    document.getElementById('newPollBtn').onclick = () => showScreen(1);
+    document.getElementById('backBtn1').onclick = () => showScreen(1);
+    document.getElementById('backBtn2').onclick = () => showScreen(1);
+
+    function showVote(poll) {
+        currentPoll = poll;
+        document.getElementById('voteQuestionText').innerText = poll.question;
+        let container = document.getElementById('voteOptions');
+        container.innerHTML = '';
+        for(let i = 0; i < poll.options.length; i++) {
+            let btn = document.createElement('button');
+            btn.className = 'option-btn';
+            btn.innerText = poll.options[i];
+            btn.onclick = () => {
+                document.querySelectorAll('#voteOptions .option-btn').forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                btn.dataset.selected = i;
+            };
+            container.appendChild(btn);
+        }
+        showScreen(3);
+    }
+
+    document.getElementById('submitVoteBtn').onclick = async () => {
+        let selected = document.querySelector('#voteOptions .option-btn.selected');
+        if(!selected) {
+            toast('⚠️ Выберите вариант');
+            return;
+        }
+        let idx = parseInt(selected.dataset.selected);
+        await saveVoteToSheet(currentPoll.id, idx, currentPoll.options[idx]);
+        toast('✅ Ваш голос учтён!');
+        await showResultsScreen(currentPoll.id, currentPoll.options);
+    };
+
+    function handleHash() {
+        let hash = window.location.hash.substring(1);
+        
+        if(hash.startsWith('vote=')) {
+            let encoded = hash.substring(5);
+            try {
+                let poll = JSON.parse(decodeURIComponent(encoded));
+                showVote(poll);
+            } catch(e) {
+                alert('Ошибка: данные опроса повреждены');
+                showScreen(1);
+            }
+        }
+        else if(hash.startsWith('results=')) {
+            let parts = hash.substring(8).split('&data=');
+            let pollId = parts[0];
+            let encoded = parts[1];
+            try {
+                let poll = JSON.parse(decodeURIComponent(encoded));
+                showResultsScreen(pollId, poll.options);
+            } catch(e) {
+                alert('Ошибка: данные опроса повреждены');
+                showScreen(1);
+            }
+        }
+        else {
+            showScreen(1);
+        }
+    }
+
+    // Инициализация: добавляем два стандартных варианта
+    function init() {
+        let container = document.getElementById('optionsList');
+        container.innerHTML = '';
+        ['Кино', 'Парк'].forEach(val => {
+            let div = document.createElement('div');
+            div.className = 'opt-item';
+            div.innerHTML = `
+                <input type="text" class="optInp inp" value="${val}">
+                <button class="del-opt-btn">❌</button>
+            `;
+            container.appendChild(div);
+            div.querySelector('.del-opt-btn').onclick = () => {
+                if(document.querySelectorAll('#optionsList .opt-item').length <= 2) {
+                    toast('❌ Должно быть минимум 2 варианта');
+                    return;
+                }
+                div.remove();
+            };
+        });
+    }
+    
+    init();
+    window.addEventListener('hashchange', handleHash);
+    handleHash();
+</script>
 </body>
 </html>
